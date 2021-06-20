@@ -1,10 +1,10 @@
 import { AxiosPromise } from './types/index'
 import { AxiosRequestConfig } from './types'
-import { handleReadyStateChange, setRequestHeader, setResponseType } from './helpers/util'
+import { handleReadyStateChange, handleNetworkError, setRequestHeader, setResponseType } from './helpers/util'
 
 
 export default function xhr(config: AxiosRequestConfig): AxiosPromise {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const {
       url,
       method = 'get',
@@ -17,6 +17,7 @@ export default function xhr(config: AxiosRequestConfig): AxiosPromise {
     request.open(method.toUpperCase(), url, true)
     /** 监听响应变化，同时处理响应数据 */
     handleReadyStateChange(request, responseType, config, resolve)
+    handleNetworkError(request, reject)
     /** 设置响应的类型 */
     setResponseType(request, responseType)
     /** 设置请求header头部 */

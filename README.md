@@ -687,3 +687,47 @@ http://localhost:8080/simple/get
 
   这样子我们就将遗留的有关于响应方面的两个问题解决完毕，到此整个axios的基础功能我们就实现好了，不过此时我们实现里头没有关于错误的处理，接下来我们就进入错误代码的处理。
 
+### 处理异常情况 - 网络异常
+
+- 目标：正确处理http网络异常情况
+
+- 实现
+
+  `src/helpers/util.ts`
+
+  ```ts
+  /**
+   * 处理xhr请求的网络异常
+   * @param request 
+   * @param reject 
+   */
+  export const handleNetworkError = (request: XMLHttpRequest, reject: Function) => {
+    request.onerror = function () {
+      reject(new Error('Network Error!'))
+    }
+  }
+  ```
+
+  `src/xhr.ts`
+
+  ```ts
+  import { handleReadyStateChange, handleNetworkError, setRequestHeader, setResponseType } from './helpers/util'
+  
+  export default function xhr(config: AxiosRequestConfig): AxiosPromise {
+    return new Promise((resolve, reject) => {
+      const {
+        url,
+        method = 'get',
+        data = null,
+        headers,
+        responseType = ''
+      } = config /** 这里headers不用给默认值，因为一定有值，最少都是一个空对象 */
+      ...
+      handleNetworkError(request, reject)
+      ...
+    })
+  }
+  ```
+
+  
+

@@ -82,7 +82,7 @@ export const setResponseType = (
 }
 
 /**
- * 正确解析xhr响应中的headers
+ * 正确解析xhr响应中的headers，将headers字符串解析成headers对象
  * @param headers 
  * @returns 
  */
@@ -133,4 +133,14 @@ export const handleReadyStateChange = (
   }
 }
 
+/**
+ * 处理xhr请求的网络异常
+ * @param request 
+ * @param reject 
+ */
+export const handleNetworkError = (request: XMLHttpRequest, reject: Function) => {
+  request.onerror = function () {
+    reject(new Error('Network Error!'))
+  }
+}
 

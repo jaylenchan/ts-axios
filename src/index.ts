@@ -39,6 +39,7 @@ function transformHeaders(config: AxiosRequestConfig) :string {
   return processHeader(headers, data)
 }
 
+/** 处理响应的data，将data正确解析成对象 */
 function transformResponseData(response: AxiosResponse) : AxiosResponse {
   response.data = transformResponse(response.data)
   return response
