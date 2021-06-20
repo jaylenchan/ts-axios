@@ -777,3 +777,56 @@ http://localhost:8080/simple/get
 
 - 目标：正确处理非200范围状态的情况
 
+- 实现
+
+  `src/helpers/util.ts`
+
+  ```ts
+  /**
+   * 处理xhr返回的响应，并对status做判断，处理非200的成功状态
+   * @param response 
+   * @param resolve 
+   * @param reject 
+   */
+  const  handleResponse =  (response: AxiosResponse, config: AxiosRequestConfig, request:XMLHttpRequest, resolve: Function , reject: Function) :void => {
+    if(response.status >= 200 && response.status < 300) resolve(response)
+    reject(createError(`Request faild with status code ${response.status}`,config, null, request, response))
+  }
+  
+  /**
+   * 监听xhr响应并处理返回值
+   * @param request
+   * @param responseType
+   * @param config
+   */
+  export const handleReadyStateChange = (
+    request: XMLHttpRequest,
+    responseType: XMLHttpRequestResponseType,
+    config: AxiosRequestConfig,
+    resolve: Function,
+    reject: Function
+  ) => {
+    request.onreadystatechange = function handleLoad() {
+      if (request.readyState !== 4) return
+      if(request.status === 0) return  /** 此时就是发生了网络错误或者超时错误 */
+      /** 否则就是为4的成功的状态 */
+      /** 获取响应数据 */
+      const { status, statusText } = request
+      const data = responseType !== 'text' ? request.response : request.responseText
+      /** 获取响应头部 */
+      const headers = parseHeaders(request.getAllResponseHeaders())
+      const axiosResponse: AxiosResponse = {
+        data,
+        status,
+        statusText,
+        headers,
+        config,
+        request
+      }
+      handleResponse(axiosResponse,config, request,resolve, reject)
+    }
+  }
+  ```
+
+  
+

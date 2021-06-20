@@ -10,7 +10,7 @@ function axios(config: AxiosRequestConfig):AxiosPromise {
   processConfig(config) 
   /** 将处理后的config传入xhr函数，发送请求 */
   return xhr(config).then(resopnse => {
-    return transformResponseData(resopnse)
+    return transformResponseData(resopnse) /** 处理一下响应的data然后才给出去-因为这里可能data是一个json字符串不是对象 */
   })
 }
 
