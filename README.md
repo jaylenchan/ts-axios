@@ -320,15 +320,13 @@ http://localhost:8080/simple/get
   import { isPlainObject } from './util'
   
   /** 对axios config中的data做处理 - 处理普通对象 */
-  const  transformRequest = (data:any) :any => { /** 叫做transformRequest,是因为发出请求前会对data处理，接收响应后也会对data处理，叫这个名字统一 */
+  export const  transformRequest = (data:any) :any => { /** 叫做transformRequest,是因为发出请求前会对data处理，接收响应后也会对data处理，叫这个名字统一 */
     /** 对于FormData, Blob, ArrayBuffer这些类型不需要做转换，xhr.send(data)中的data是可以允许这些类型传递的 */
     /** 我们只需要对axios传入的普通对象做处理 */
     if(isPlainObject(data)) return JSON.stringify(data) /** 是普通对象的话直接序列化反回 */
     return data /** 否则直接返回data，此时data啥类型直接原样返回啥类型 */
   }
   
-  
-  export default transformRequest
   ```
 
   `src/helper/util.ts`
@@ -342,7 +340,7 @@ http://localhost:8080/simple/get
 
   ```ts
   ...
-  import transformRequest from './helpers/data'
+  import { transformRequest } from './helpers/data'
   import { AxiosRequestConfig } from './types'
   import xhr from './xhr'
   
@@ -575,7 +573,117 @@ http://localhost:8080/simple/get
 
 - 目标：正确处理响应的header字段
 
+- 实现
+
+  `src/helpers/util.ts`
+
+  ```ts
+  /**
+   * 正确解析xhr响应中的headers
+   * @param headers 
+   * @returns 
+   */
+  export const parseHeaders = (headers: string): any => {
+    const parsedHeaders = Object.create(null)
+    if (!headers) return parsedHeaders
+    /** 按回车符和换行符分割 */
+    headers.split('\r\n').forEach(line => {
+      let [key, val] = line.split(':')
+      if (!key)return
+      if (!val) return
+      key = key.trim().toLowerCase()
+      val = val.trim()
+      parsedHeaders[key] = val
+    })
+    return parsedHeaders
+  }
+  
+  /**
+   * 正确解析xhr响应中的headers
+   * @param headers 
+   * @returns 
+   */
+  export const parseHeaders = (headers: string): any => {
+    const parsedHeaders = Object.create(null)
+    if (!headers) return parsedHeaders
+    /** 按回车符和换行符分割 */
+    headers.split('\r\n').forEach(line => {
+      let [key, val] = line.split(':')
+      if (!key)return
+      if (!val) return
+      key = key.trim().toLowerCase()
+      val = val.trim()
+      parsedHeaders[key] = val
+    })
+    return parsedHeaders
+  }
+  
+  /**
+   * 监听xhr响应并处理返回值
+   * @param request
+   * @param responseType
+   * @param config
+   */
+  export const handleReadyStateChange = (
+    request: XMLHttpRequest,
+    responseType: XMLHttpRequestResponseType,
+    config: AxiosRequestConfig,
+    resolve: Function
+  ) => {
+    request.onreadystatechange = function handleLoad() {
+     ...
+      /** 获取响应头部 */
+      const headers = parseHeaders(request.getAllResponseHeaders())
+     ...
+    }
+  }
+  
+  ```
+
 ### 解决遗留问题 - 处理响应data
 
 - 目标： 正确处理响应的data字段
+
+- 实现
+
+  `src/helpers/data.ts`
+
+  ```ts
+  /**
+   * 对data进行正确的处理，如果是字符串要解析成对象
+   * @param data 
+   * @returns 
+   */
+  export const transformResponse = (data: any) :any => {
+    if(typeof data === 'string') {
+      try{ /** 使用try catch是因为说这个data可能是普通的字符串，如果直接去解析可能报错的 */
+       data = JSON.parse(data)
+      }catch(err) {
+        // 啥都不做
+      }
+    }
+    return data
+  }
+  ```
+
+  `src/index.ts`
+
+  ```ts
+  
+  function axios(config: AxiosRequestConfig):AxiosPromise {
+    /** 处理config */
+    processConfig(config) 
+    /** 将处理后的config传入xhr函数，发送请求 */
+    return xhr(config).then(resopnse => {
+      return transformResponseData(resopnse)
+    })
+  }
+  
+  function transformResponseData(response: AxiosResponse) : AxiosResponse {
+    response.data = transformResponse(response.data)
+    return response
+  }
+  ```
+
+  这样子我们就将遗留的有关于响应方面的两个问题解决完毕，到此整个axios的基础功能我们就实现好了，不过此时我们实现里头没有关于错误的处理，接下来我们就进入错误代码的处理。
 
