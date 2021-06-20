@@ -21,4 +21,5 @@ export interface AxiosRequestConfig {
   method?: Method /** method可选，因为默认会给‘get' */
   data?: any /** data可选 */
   params?: any /** params可选 */
+  headers?:any /** headers可选 */
 }
