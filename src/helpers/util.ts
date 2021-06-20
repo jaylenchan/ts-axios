@@ -1,4 +1,3 @@
-import { resolve } from 'rollup-plugin-node-resolve'
 import { AxiosRequestConfig, AxiosResponse } from '../types'
 
 const toString = Object.prototype.toString
@@ -143,4 +142,18 @@ export const handleNetworkError = (request: XMLHttpRequest, reject: Function) =>
     reject(new Error('Network Error!'))
   }
 }
+
+
+/**
+ * 处理xhr请求的超时异常
+ * @param request 
+ * @param reject 
+ */
+export const handleTimeoutError = (request: XMLHttpRequest, timeout: number, reject: Function) => {
+  request.timeout = timeout
+  request.ontimeout = function () {
+    reject(new Error(`Timeout of ${timeout} ms exceeded!`))
+  }
+}
+
 

@@ -729,5 +729,49 @@ http://localhost:8080/simple/get
   }
   ```
 
+### 处理异常情况 - 超时错误
+
+- 目标：正确处理http网络超时错误
+
+- 实现
+
+  `src/helpers/util.ts`
+
+  ```ts
+  /**
+   * 处理xhr请求的超时异常
+   * @param request 
+   * @param reject 
+   */
+  export const handleTimeoutError = (request: XMLHttpRequest, timeout: number, reject: Function) => {
+    request.timeout = timeout
+    request.ontimeout = function () {
+      reject(new Error(`Timeout of ${timeout} ms exceeded!`))
+    }
+  }
+  ```
+
+  `src/xhr.ts`
+
+  ```ts
+  ...
+  import {
+    ...
+    handleTimeoutError,
+    ...
+  } from './helpers/util'
+  
+  export default function xhr(config: AxiosRequestConfig): AxiosPromise {
+    return new Promise((resolve, reject) => {
+      const {
+       ...
+        timeout = 0
+      } = config /** 这里headers不用给默认值，因为一定有值，最少都是一个空对象 */
+      /** 处理超时异常 */
+      handleTimeoutError(request, timeout, reject)
+    })
+  }
+  ```
+
   
 

@@ -23,6 +23,7 @@ export interface AxiosRequestConfig {
   params?: any /** params可选 */
   headers?: any /** headers可选 */
   responseType?: XMLHttpRequestResponseType /** responseType可选，后面这个类型其实就是一个内置的联合类型而已 */
+  timeout?: number /** timeout可选，设置请求超时时间 */
 }
 
 /** response的类型定义 */
