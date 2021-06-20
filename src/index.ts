@@ -1,12 +1,13 @@
+import { AxiosPromise } from './types/index';
 import bindURL from './helpers/url'
 import transformRequest from './helpers/data'
 import processHeader from './helpers/headers'
 import { AxiosRequestConfig } from './types'
 import xhr from './xhr'
 
-function axios(config: AxiosRequestConfig):void {
+function axios(config: AxiosRequestConfig):AxiosPromise {
   processConfig(config) /** 处理config */
-  xhr(config) /** 将处理后的config传入xhr函数，发送请求 */
+  return xhr(config) /** 将处理后的config传入xhr函数，发送请求 */
 }
 
 /** 处理请求配置 */

@@ -471,5 +471,103 @@ http://localhost:8080/simple/get
   }
   ```
 
+### 处理服务端返回的响应
+
+- 目标：能够在代码层面正确处理服务端返回的响应
+
+- 实现
+
+  `src/types/index.ts`
+
+  ```ts
+  /** response的类型定义 */
+  export interface AxiosResponse {
+    data: any
+    status: number
+    statusText: string
+    headers: any
+    config: AxiosRequestConfig
+    request: any
+  }
+  
+  /** promise方式的response类型定义 */
+  export interface AxiosPromise extends Promise<AxiosResponse> {
+  
+  }
+  ```
+
+  `src/helpers/util.ts`
+
+  ```ts
+  /**
+   * 监听xhr响应并处理返回值
+   * @param request 
+   * @param responseType 
+   * @param config 
+   */
+  export const handleReadyStateChange = (request: XMLHttpRequest, responseType: XMLHttpRequestResponseType, config: AxiosRequestConfig, resolve:Function) => {
+    request.onreadystatechange = function handleLoad () {
+      if(request.readyState !== 4) return 
+      /** 否则就是为4的成功的状态 */
+      /** 获取响应数据 */
+      const { status, statusText } = request
+      const data = responseType !== 'text' ? request.response : request.responseText
+      /** 获取响应头部 */
+      const headers = request.getAllResponseHeaders()
+      const axiosResponse: AxiosResponse = {
+        data,
+        status,
+        statusText,
+        headers,
+        config,
+        request
+      }
+      resolve(axiosResponse)
+    }
+  }
+  ```
+
+  `src/xhr.ts`
+
+  ```ts
+  import { AxiosPromise } from './types/index'
+  import { AxiosRequestConfig } from './types'
+  import { handleReadyStateChange, setRequestHeader, setResponseType } from './helpers/util'
+  
+  
+  export default function xhr(config: AxiosRequestConfig): AxiosPromise {
+    return new Promise((resolve) => {
+      const {
+        url,
+        method = 'get',
+        data = null,
+        headers,
+        responseType = ''
+      } = config /** 这里headers不用给默认值，因为一定有值，最少都是一个空对象 */
+      const request = new XMLHttpRequest()
+      /** 开启一条请求连接：请求方法大写 - url - true是异步的意思 */
+      request.open(method.toUpperCase(), url, true)
+      /** 监听响应变化，同时处理响应数据 */
+      handleReadyStateChange(request, responseType, config, resolve)
+      /** 设置响应的类型 */
+      setResponseType(request, responseType)
+      /** 设置请求header头部 */
+      setRequestHeader(request, headers, data)
+      request.send(data)
+    })
+  }
+  ```
+
+  `src/index.ts`
+
+  我们将返回值替换成AxiosPromise
+
+  ```ts
+  function axios(config: AxiosRequestConfig):AxiosPromise {
+    processConfig(config) /** 处理config */
+    return xhr(config) /** 将处理后的config传入xhr函数，发送请求 */
+  }
+  ```
+
   
 

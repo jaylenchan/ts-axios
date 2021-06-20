@@ -1,3 +1,6 @@
+import { resolve } from 'rollup-plugin-node-resolve';
+import { AxiosRequestConfig, AxiosResponse } from "../types"
+
 const toString = Object.prototype.toString
 
 /** 是否为空 */
@@ -51,4 +54,40 @@ export const normalizedHeaderName = (headers:any, normalizedName: string): any =
     if(!data && header.toLocaleLowerCase() === 'content-type') return Reflect.deleteProperty(headers, header)
     request.setRequestHeader(header, value)
   })
+}
+
+/**
+ * 设置xhr的响应类型
+ * @param request 
+ * @param responseType 
+ */
+export const setResponseType = (request: XMLHttpRequest, responseType: XMLHttpRequestResponseType):void =>{
+  request.responseType = responseType
+}
+
+/**
+ * 监听xhr响应并处理返回值
+ * @param request 
+ * @param responseType 
+ * @param config 
+ */
+export const handleReadyStateChange = (request: XMLHttpRequest, responseType: XMLHttpRequestResponseType, config: AxiosRequestConfig, resolve:Function) => {
+  request.onreadystatechange = function handleLoad () {
+    if(request.readyState !== 4) return 
+    /** 否则就是为4的成功的状态 */
+    /** 获取响应数据 */
+    const { status, statusText } = request
+    const data = responseType !== 'text' ? request.response : request.responseText
+    /** 获取响应头部 */
+    const headers = request.getAllResponseHeaders()
+    const axiosResponse: AxiosResponse = {
+      data,
+      status,
+      statusText,
+      headers,
+      config,
+      request
+    }
+    resolve(axiosResponse)
+  }
 }
