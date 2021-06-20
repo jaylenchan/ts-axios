@@ -1,4 +1,5 @@
 import { AxiosRequestConfig, AxiosResponse } from '../types'
+import createError from './error'
 
 const toString = Object.prototype.toString
 
@@ -101,6 +102,17 @@ export const parseHeaders = (headers: string): any => {
 }
 
 /**
+ * 处理xhr返回的响应，并对status做判断，处理非200的成功状态
+ * @param response 
+ * @param resolve 
+ * @param reject 
+ */
+const  handleResponse =  (response: AxiosResponse, config: AxiosRequestConfig, request:XMLHttpRequest, resolve: Function , reject: Function) :void => {
+  if(response.status >= 200 && response.status < 300) resolve(response)
+  reject(createError(`Request faild with status code ${response.status}`,config, null, request, response))
+}
+
+/**
  * 监听xhr响应并处理返回值
  * @param request
  * @param responseType
@@ -110,10 +122,12 @@ export const handleReadyStateChange = (
   request: XMLHttpRequest,
   responseType: XMLHttpRequestResponseType,
   config: AxiosRequestConfig,
-  resolve: Function
+  resolve: Function,
+  reject: Function
 ) => {
   request.onreadystatechange = function handleLoad() {
     if (request.readyState !== 4) return
+    if(request.status === 0) return  /** 此时就是发生了网络错误或者超时错误 */
     /** 否则就是为4的成功的状态 */
     /** 获取响应数据 */
     const { status, statusText } = request
@@ -128,7 +142,7 @@ export const handleReadyStateChange = (
       config,
       request
     }
-    resolve(axiosResponse)
+    handleResponse(axiosResponse,config, request,resolve, reject)
   }
 }
 
@@ -137,9 +151,9 @@ export const handleReadyStateChange = (
  * @param request 
  * @param reject 
  */
-export const handleNetworkError = (request: XMLHttpRequest, reject: Function) => {
+export const handleNetworkError = (request: XMLHttpRequest, config: AxiosRequestConfig,reject: Function) => {
   request.onerror = function () {
-    reject(new Error('Network Error!'))
+    reject(createError('Network Error!', config, null, request))
   }
 }
 
@@ -149,10 +163,10 @@ export const handleNetworkError = (request: XMLHttpRequest, reject: Function) =>
  * @param request 
  * @param reject 
  */
-export const handleTimeoutError = (request: XMLHttpRequest, timeout: number, reject: Function) => {
+export const handleTimeoutError = (request: XMLHttpRequest, timeout: number, config: AxiosRequestConfig,reject: Function) => {
   request.timeout = timeout
   request.ontimeout = function () {
-    reject(new Error(`Timeout of ${timeout} ms exceeded!`))
+    reject(createError(`Timeout of ${timeout} ms exceeded!`,config,'ECONNABORTED',request))
   }
 }
 
